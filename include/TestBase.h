@@ -5,11 +5,17 @@
 #include <random>
 #include <iostream>
 #include <iomanip>
+#include <string>
 
 template<typename Cache>
 class TestBase{
 public:
-    TestBase(Cache& cache):cache_(cache){}
+    TestBase(Cache& cache, std::string name)
+    :cache_(cache)
+    ,CacheName_(name)
+    {
+        std::cout<<name<<std::endl;
+    }
     ~TestBase() = default;
     void testHotData(const int CAPACITY=50, const int OPERATIONS=200000, const int HOT_KEYS=50, const int COLD_KEYS=500);
     void testLoop(const int CAPACITY=50, const int LOOP_SIZE=200, const int OPERATIONS=200000);
@@ -17,6 +23,7 @@ public:
     void printResult(const std::string& testName, int capacity, int getOps, int hits, std::chrono::duration<double> diffTime);
 private:
     Cache& cache_;
+    std::string CacheName_;
 };
 
 template<typename Cache>
