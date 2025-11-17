@@ -170,21 +170,6 @@ void LfuCache<Key, Value>::decreaseFreqNum(int num){
     else curAverageNum_ = curTotalNum_ / nodeMap_.size();
 }
 
-// template<typename Key, typename Value>
-// void LfuCache<Key, Value>::handleOverMaxAverageNum(){
-//     // 自我调节机制，防止频次过高
-//     if(nodeMap_.empty()) return;
-//     for(auto it = nodeMap_.begin(); it != nodeMap_.end(); it++){
-//         if(!it->second) continue;
-//         Nodeptr node = it->second;
-//         removeFromFreqList(node);
-//         node->freq -= maxAverageNum_/2;
-//         if(node->freq < 1) node->freq =1;
-//         addToFreqList(node);
-//     }
-//     updateMinFreq();
-// }
-
 // debug版本
 template<typename Key, typename Value>
 void LfuCache<Key, Value>::handleOverMaxAverageNum(){

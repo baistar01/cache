@@ -1,5 +1,5 @@
 #pragma once
-using namespace std;
+#include <memory>
 
 template<typename Key, typename Value>
 class LruCache;
@@ -10,8 +10,8 @@ class LruNode{
         Key key;
         Value value;
         size_t accessCount;
-        weak_ptr<LruNode<Key, Value>> prev;
-        shared_ptr<LruNode<Key, Value>> next;
+        std::weak_ptr<LruNode<Key, Value>> prev;
+        std::shared_ptr<LruNode<Key, Value>> next;
     public:
         LruNode(Key key, Value value):key(key), value(value), accessCount(1), prev(), next() {}
 

@@ -4,112 +4,111 @@
 #include <vector>
 #include <iomanip>
 #include <random>
-#include <chrono>
+#include <algorithm>
+#include "ArcHashCache.h"
 
-#include "LruKCache.h"
 
-// 辅助函数：打印结果
-void printResults(const std::string& testName, int capacity, int hits, int get_ops, std::chrono::duration<double> diffTime) {
-    double hitRate = get_ops > 0 ? 100.0 * hits / get_ops : 0.0;
-    std::cout << "=== " << testName << " ===" << std::endl;
-    std::cout << "缓存类型: LRU-K" << std::endl;
+// 打印结果
+void printResult(const std::string& testName, int capacity, int getOps, int hits, std::chrono::duration<double> diffTime) {
+    double hitRate = 100.0 * hits / getOps;
+    std::cout << "=== " << testName << " 结果汇总 ===" << std::endl;
     std::cout << "缓存大小: " << capacity << std::endl;
     std::cout << "运行时间：" << diffTime.count() << "秒" << std::endl;
-    std::cout << "命中率: " << std::fixed << std::setprecision(2)
-              << hitRate << "% (" << hits << "/" << get_ops << ")\n\n";
+    std::cout << "命中率: " << std::fixed << std::setprecision(2) 
+              << hitRate << "% (" << hits << "/" << getOps << ")\n\n";
 }
 
-void testHotData_LRUK() {
+// 测试1：热点数据访问
+void testHotData_ARC() {
     auto timeStart = std::chrono::steady_clock::now(); // 计算起始时间
-    std::cout << "\n=== 热点数据访问测试（LRU-K） ===" << std::endl;
+    std::cout << "\n=== 热点数据访问 ===" << std::endl;
+
     const int CAPACITY = 50;
     const int OPERATIONS = 200000;
     const int HOT_KEYS = 50;
     const int COLD_KEYS = 500;
 
-    LruKCache<int, std::string> lruk(CAPACITY, HOT_KEYS + COLD_KEYS, 2);
+    ArcHashCache<int, std::string> arc(CAPACITY, 4, 2);
 
     std::mt19937 gen(42);
 
-    int hits = 0, get_ops = 0;
+    int hits = 0, getOps = 0;
 
-    // 预热
+    // 预热缓存
     for (int k = 0; k < HOT_KEYS; ++k) {
-        lruk.put(k, "v" + std::to_string(k));
+        arc.put(k, "v" + std::to_string(k));
     }
 
     for (int op = 0; op < OPERATIONS; ++op) {
         bool isPut = (gen() % 100 < 30);
-        int key = (gen() % 100 < 70) ? gen() % HOT_KEYS : HOT_KEYS + (gen() % COLD_KEYS);
+        int key = (gen() % 100 < 70) ? (gen() % HOT_KEYS) : (HOT_KEYS + (gen() % COLD_KEYS));
 
         if (isPut) {
-            lruk.put(key, "val" + std::to_string(key));
-        }
-        else
-        {
+            arc.put(key, "value" + std::to_string(key));
+        } else {
             std::string result;
-            get_ops++;
-            if (lruk.get(key, result)) hits++;
+            getOps++;
+            if (arc.get(key, result)) hits++;
         }
     }
 
     auto timeEnd = std::chrono::steady_clock::now();
     std::chrono::duration<double> diffTime = timeEnd-timeStart; // 以秒为单位
 
-    printResults("热点数据访问测试", CAPACITY, hits, get_ops, diffTime);
+    printResult("热点数据访问", CAPACITY, getOps, hits, diffTime);
 }
 
-void testLoop_LRUK() {
+// 测试2：循环扫描
+void testLoop_ARC() {
     auto timeStart = std::chrono::steady_clock::now(); // 计算起始时间
-    std::cout << "\n=== 循环扫描测试（LRU-K） ===" << std::endl;
+    std::cout << "\n=== 循环扫描 ===" << std::endl;
 
     const int CAPACITY = 50;
     const int LOOP_SIZE = 200;
     const int OPERATIONS = 200000;
 
-    LruKCache<int, std::string> lruk(CAPACITY, LOOP_SIZE * 2, 2);
-
+    ArcHashCache<int, std::string> arc(CAPACITY, 4, 2);
     std::mt19937 gen(42);
 
-    int hits = 0, get_ops = 0;
+    int hits = 0, getOps = 0;
     int current = 0;
 
     for (int op = 0; op < OPERATIONS; ++op) {
         bool isPut = (gen() % 100 < 30);
-        int key = (op % 100 < 70) ? current++ % LOOP_SIZE : gen() % LOOP_SIZE;;
-
-        if (isPut) {
-            lruk.put(key, "v" + std::to_string(key));
-        } else {
+        int key = (op % 100 < 70) ? current++ % LOOP_SIZE : gen() % LOOP_SIZE;
+        if (isPut)
+            arc.put(key, "loop" + std::to_string(key));
+        else {
             std::string result;
-            get_ops++;
-            if (lruk.get(key, result)) hits++;
+            getOps++;
+            if (arc.get(key, result)) hits++;
         }
     }
 
     auto timeEnd = std::chrono::steady_clock::now();
     std::chrono::duration<double> diffTime = timeEnd-timeStart; // 以秒为单位
 
-    printResults("循环扫描", CAPACITY, hits, get_ops, diffTime);
+    printResult("循环扫描", CAPACITY, getOps, hits, diffTime);
 }
 
-void testWorkloadShift() {
+// 测试3：工作负载变化
+void testWorkloadShift_ARC() {
     auto timeStart = std::chrono::steady_clock::now(); // 计算起始时间
-    std::cout << "\n=== 测工作负载剧烈变化测试（LRUK） ===" << std::endl;
+    std::cout << "\n=== 工作负载剧烈变化 ===" << std::endl;
 
     const int CAPACITY = 50;
     const int OPERATIONS = 200000;
     const int PHASE_LEN = OPERATIONS / 5;
 
-    LruKCache<int, std::string> lruk(CAPACITY, 500, 2);
-
+    ArcHashCache<int, std::string> arc(CAPACITY, 4, 2);
     std::mt19937 gen(42);
 
-    int hits = 0, get_ops = 0;
+    int hits = 0, getOps = 0;
 
     for (int op = 0; op < OPERATIONS; ++op) {
         int phase = op / PHASE_LEN;
         bool isPut = (gen() % 100 < 30);
+
         int key;
         switch (phase) {
             case 0: key = gen() % 5; break;
@@ -118,25 +117,26 @@ void testWorkloadShift() {
             case 3: key = (op / 800 % 5) * 15 + gen() % 15; break;
             default: key = (gen() % 100 < 40) ? gen() % 5 : 5 + gen() % 45;
         }
-
-        if (isPut) {
-            lruk.put(key, "val" + std::to_string(key));
-        } else {
+        if (isPut){
+            arc.put(key, "val" + std::to_string(key));
+        }
+        else
+        {
             std::string result;
-            get_ops++;
-            if (lruk.get(key, result)) hits++;
+            getOps++;
+            if (arc.get(key, result)) hits++;
         }
     }
 
     auto timeEnd = std::chrono::steady_clock::now();
     std::chrono::duration<double> diffTime = timeEnd-timeStart; // 以秒为单位
 
-    printResults("工作负载剧烈变化", CAPACITY, hits, get_ops, diffTime);
+    printResult("工作负载变化测试", CAPACITY, getOps, hits, diffTime);
 }
 
 int main() {
-    testHotData_LRUK();
-    testLoop_LRUK();
-    testWorkloadShift();
+    testHotData_ARC();
+    testLoop_ARC();
+    testWorkloadShift_ARC();
     return 0;
 }

@@ -12,8 +12,8 @@ template<typename Key,typename Value>
 class LruCache : public cachePolicy<Key,Value>{
 public:
     using LruNodeType = LruNode<Key, Value>;
-    using Nodeptr = shared_ptr<LruNodeType>;
-    using Nodemap = unordered_map<Key, Nodeptr>;
+    using Nodeptr = std::shared_ptr<LruNodeType>;
+    using Nodemap = std::unordered_map<Key, Nodeptr>;
 
     LruCache(int capacity):capacity_(capacity){ initializeList(); }
     ~LruCache() override = default;
@@ -33,7 +33,7 @@ private:
 private:
     int capacity_;
     Nodemap nodeMap_;
-    mutex mutex_;
+    std::mutex mutex_;
     Nodeptr dummyHead_;
     Nodeptr dummyTail_;
 };
@@ -41,7 +41,7 @@ private:
 template<typename Key, typename Value>
 void LruCache<Key, Value>::put(Key key, Value value){
     if(capacity_<=0) return;
-    lock_guard<mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     auto it = nodeMap_.find(key);
     if(it != nodeMap_.end()){
         updateExistingNode(it->second, value);
@@ -52,7 +52,7 @@ void LruCache<Key, Value>::put(Key key, Value value){
 
 template<typename Key, typename Value>
 bool LruCache<Key, Value>::get(Key key, Value& value){
-    lock_guard<mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     auto it = nodeMap_.find(key);
     if(it != nodeMap_.end()){
         moveToMostRecent(it->second);
@@ -71,7 +71,7 @@ Value LruCache<Key, Value>::get(Key key){
 
 template<typename Key, typename Value>
 void LruCache<Key, Value>::remove(Key key){
-    lock_guard<mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     auto it = nodeMap_.find(key);
     if(it != nodeMap_.end()){
         removeNode(it->second);
@@ -81,8 +81,8 @@ void LruCache<Key, Value>::remove(Key key){
 
 template<typename Key, typename Value>
 void LruCache<Key, Value>::initializeList(){
-    dummyHead_ = make_shared<LruNodeType>(Key{}, Value{});
-    dummyTail_ = make_shared<LruNodeType>(Key{}, Value{});
+    dummyHead_ = std::make_shared<LruNodeType>(Key{}, Value{});
+    dummyTail_ = std::make_shared<LruNodeType>(Key{}, Value{});
     dummyHead_->next = dummyTail_;
     dummyTail_->prev = dummyHead_;
 }
@@ -92,7 +92,7 @@ void LruCache<Key, Value>::addNewNode(Key key, Value value){
     if(nodeMap_.size() >= capacity_){
         evictLeastRecent();
     }
-    Nodeptr newNode = make_shared<LruNodeType>(key, value);
+    Nodeptr newNode = std::make_shared<LruNodeType>(key, value);
     insertNode(newNode);
     nodeMap_[key]= newNode;
 }

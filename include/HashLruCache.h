@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <vector>
+#include <cmath>
 
 #include "CachePolicy.h"
 #include "LruCache.h"
@@ -17,7 +18,7 @@ public:
     :capacity_(capacity)
     ,sliceNum_(sliceNum > 0 ? sliceNum : std::thread::hardware_concurrency())
     {
-        size_t sliceSize = std::ceil(capacity / static_cast<double>(sliceNum_));
+        size_t sliceSize = std::ceil(capacity_ / static_cast<double>(sliceNum_));
         for(int i=0;i<sliceNum_; i++){
             lruSliceCaches_.emplace_back(new LruCache<Key, Value>(sliceSize));
         }
