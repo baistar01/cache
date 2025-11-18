@@ -19,7 +19,8 @@ public:
     explicit ArcLfu(size_t capacity, size_t transformThreshold)
     : capacity_(capacity)
     , transformThreshold_(transformThreshold)
-    , minFreq_(0)
+    , minFreq_(1)
+    , ghostCapacity_(capacity)
     {
         initializeLists();
     }

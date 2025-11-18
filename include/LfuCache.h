@@ -21,7 +21,9 @@ public:
     , curTotalNum_(0)
     {}
 
-    ~LfuCache() override = default;
+    ~LfuCache() override{
+        purge();
+    };
 
     void put(Key key, Value value) override;
     bool get(Key key, Value& value) override;
@@ -48,7 +50,7 @@ private:
     std::mutex mutex_;
     NodeMap nodeMap_;
 
-    std::unordered_map<int, FreqList<Key, Value>*> freqToFreqList_;  // value为指向FreqList的指针，访问频次到频次链表的映射
+    std::unordered_map<int, std::shared_ptr<FreqList<Key, Value>>> freqToFreqList_;  // value为指向FreqList的指针，访问频次到频次链表的映射
 };
 
 template<typename Key, typename Value>
@@ -147,7 +149,7 @@ void LfuCache<Key, Value>::addToFreqList(Nodeptr node){
     auto freq = node->freq;
     // 如果频次链表不存在，创建一个新的频次链表
     if(freqToFreqList_.find(freq) == freqToFreqList_.end()){
-        freqToFreqList_[node->freq] = new FreqList<Key, Value>(node->freq);
+        freqToFreqList_[node->freq] = std::make_shared<FreqList<Key, Value>>(node->freq);
     }
     freqToFreqList_[freq]->addNode(node);
 }

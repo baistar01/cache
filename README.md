@@ -100,3 +100,7 @@ result.txt：记录测试结果
 掌握了多种缓存策略的设计与实现。
 
 制定多种测试环境，热冷点数据访问、循环扫描访问、工作负载剧烈变化等。
+
+# 内存泄露检测
+
+valgrind --leak-check=full --show-leak-kinds=all ./bin/……
