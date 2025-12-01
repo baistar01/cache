@@ -1,6 +1,5 @@
 #pragma once
 
-#include <mutex>
 #include <unordered_map>
 #include <map>
 #include <list>
@@ -48,7 +47,6 @@ private:
     size_t ghostCapacity_;           // 幽灵缓存容量
     size_t transformThreshold_;      // 转换阈值
     size_t minFreq_;                 // 最小访问频次
-    std::mutex mutex_;
     
     NodeMap mainCache_;              // 主缓存
     NodeMap ghostCache_;             // 幽灵缓存
@@ -63,7 +61,6 @@ bool ArcLfu<Key, Value>::put(Key key, Value value){
     // 向缓存中添加元素，如果存在于主缓存中进行更新，否则添加新的节点
     // todo是否需要判断是否命中幽灵缓存？
     if(capacity_ == 0) return false;
-    std::lock_guard<std::mutex> lock(mutex_);
     auto it = mainCache_.find(key);
     if(it != mainCache_.end()){
         return updateExistingNode(it->second, value);
@@ -74,7 +71,6 @@ bool ArcLfu<Key, Value>::put(Key key, Value value){
 template<typename Key, typename Value>
 bool ArcLfu<Key, Value>::get(Key key, Value& value){
     // 判断是否存在于主缓存中，是的话进行更新
-    std::lock_guard<std::mutex> lock(mutex_);
     auto it = mainCache_.find(key);
     if(it != mainCache_.end()){
         updateExistingNode(it->second, value);

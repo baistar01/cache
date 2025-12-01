@@ -1,7 +1,6 @@
 #pragma once
 
 #include <unordered_map>
-#include <mutex>
 
 #include "ArcCacheNode.h"
 
@@ -46,7 +45,6 @@ private:
     size_t capacity_;
     size_t ghostCapacity_;
     size_t transformThreshold_; // 转换阈值
-    std::mutex mutex_;
 
     NodeMap mainCache_;  // 主缓存
     NodeMap ghostCache_; // 幽灵缓存
@@ -62,7 +60,6 @@ template<typename Key, typename Value>
 bool ArcLru<Key, Value>::put(Key key, Value value)
 {
     if(capacity_ == 0) return false;
-    std::lock_guard<std::mutex> lock(mutex_);
     auto it = mainCache_.find(key);
     if(it != mainCache_.end()){
         return updateExistingNode(it->second, value);
@@ -73,7 +70,6 @@ bool ArcLru<Key, Value>::put(Key key, Value value)
 template<typename Key, typename Value>
 bool ArcLru<Key, Value>::get(Key key, Value& value, bool& shouldTransform)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     auto it=mainCache_.find(key);
     if(it != mainCache_.end()){
         shouldTransform = updateNodeAccess(it->second);

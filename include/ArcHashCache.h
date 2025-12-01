@@ -3,7 +3,6 @@
 #include <vector>
 #include <memory>
 #include <thread>
-#include <mutex>
 #include <cmath>
 
 #include "ArcCache.h"

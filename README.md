@@ -1,14 +1,18 @@
 # cache
-实现了Lru, Lru-k, Lfu, Lru 分片, Lfu 分片, Arc 缓存策略
+实现了Lru, Lru-k, Lfu, Lru 分片, Lfu 分片, Arc，Arc分片 缓存策略
 
 c++11
 
 g++ -std:c++11 -O2 src/…… -Iinclude -o bin/……
 
+### 内存泄露检测
+
+valgrind --leak-check=full --show-leak-kinds=all ./bin/……
+
 # 实现
 ./include/CachePolicy.h：缓存策略的基类函数，声明接口
 
-# LRU缓存
+## LRU缓存
 ./include/LruNode.h：定义LRU缓存的节点类
 
 ./include/LruCache.h：实现了LRU缓存策略
@@ -17,28 +21,28 @@ g++ -std:c++11 -O2 src/…… -Iinclude -o bin/……
 
 ./include/HashLruCache.h：实现了切片LRU缓存策略
 
-# LFU缓存
+## LFU缓存
 ./include/LfuList.h：定义了LFU缓存的链表结构
 
 ./include/LfuCache.h：实现了LFU缓存策略
 
 ./include/HashLfuCache.h：实现了切片LFU缓存策略
 
-# ARC缓存
+## ARC缓存
 ./include/ArcCacheNode.h：定义了ARC缓存的节点
-
-./include/ArcCache.h：定义自适应缓存策略
 
 ./include/ArcLfu.h：定义Arc的LFU缓存机制
 
 ./include/ArcLru.h：定义Arc的LRU缓存机制
 
-./include/ArcHashCache.h：定义ArcHash的缓存机制
+./include/ArcCache.h：定义自适应缓存策略
 
+./include/ArcHashCache.h：定义ArcHash的缓存机制
 
 ！制作ArcHash缓存时需要对Arc进行分片而不是对其中的Lru和Lfu分片
 
-# 测试代码
+## 测试代码
+### 每种策略使用独立的测试代码
 ./src/Lru.cpp
 
 ./src/Lfu.cpp
@@ -53,24 +57,17 @@ g++ -std:c++11 -O2 src/…… -Iinclude -o bin/……
 
 ./src/ArcHash.cpp
 
-
-./include/TestBase.h 定义的测试基准
-
-./src/TestAll.cpp  基于TestBase的所有类型测试
-
 场景1:热点数据访问：
 
 参数名称：capacity缓存容量、ops操作次数、put概率、get概率、hotKeys热点数据、coldKeys冷点数据、热点概率、冷点概率
 
 参数设置：50，200 000，30%，70%，50，500，70%，30%
 
-
 场景2:循环扫描：
 
 参数名称：capacity缓存容量、ops操作次数、put概率、get概率、循环扫描范围、顺序扫描、随机扫描
 
 参数设置：50，200 000，30%，70%，200，70%，30%
-
 
 场景3:工作负载剧烈变化：
 
@@ -88,19 +85,41 @@ case3:分组访问
 
 case4:热冷混合访问
 
-
-
 result.txt：记录测试结果
 
-# 个人收获
-基于c++实现了支持线程安全的高并发缓存系统，实现了多种缓存策略（LRU、LFU、ARC）及其变种（LRU-K、HashLRU、HashLFU、HashArc）
+### 综合所有方法的测试
+./include/TestBase.h 定义的测试基准
 
-理解多线程编程和线程同步机制，包括互斥锁的使用、线程的使用、降低锁的粒度等。
+./src/TestAll.cpp  基于TestBase的所有类型测试
+
+## 线程池
+./include/ThreadPool.h 线程池设计
+
+## ArcHashCache测试
+针对ArcHashCache缓存策略，使用了3种方法：单线程，多线程，线程池进行测试
+
+./bin/TestThread.h：单线程与多线程执行器，测试逻辑等
+
+./src/TestThreadAll.cpp 针对ArcHashCache缓存策略的测试代码
+
+测试时，遇到的多线程速度比单线程速度慢：
+
+可能问题：
+
+1. 锁的粒度太大：ArcHashCache中不设置任何锁，ArcCache中设置一把大锁，删除ArcLfu和ArcLru中的锁，避免拿锁的开销。
+
+2. ArcCache中设置的一把大锁修改为两把锁：lrumutex_和lfumutex_，分别控制Lru和Lfu部分。
+
+2. 多线程执行器和多线程-线程池执行器的运行速度基本一致。
+
+# 个人收获
+
+基于c++实现了支持线程安全的高并发缓存系统，实现了多种缓存策略（LRU、LFU、ARC）及其变种（LRU-K、HashLRU、HashLFU、HashArc），并对HashArc缓存策略进行了并发性能测试
+
+理解多线程编程和线程同步机制，包括线程的创建和管理、互斥锁和条件变量的使用、降低锁的粒度等。
 
 掌握了多种缓存策略的设计与实现。
 
 制定多种测试环境，热冷点数据访问、循环扫描访问、工作负载剧烈变化等。
 
-# 内存泄露检测
-
-valgrind --leak-check=full --show-leak-kinds=all ./bin/……
+分别在单线程，多线程，线程池执行模式对HashArc缓存策略进行并发测试。
